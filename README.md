@@ -4,6 +4,19 @@
 [![Build Status]( https://github.com/cpq/bare-metal-programming-guide/workflows/build/badge.svg)](https://github.com/cpq/bare-metal-programming-guide/actions)
 
 English | [中文](README_zh-CN.md) | [Türkçe](README_tr-TR.md)
+___
+**NOTE: This is a fork of the original repo found [here](https://github.com/cpq/bare-metal-programming-guide); Since I didn't have one of the boards listed in the original tutorial, I rewrote this for my own use with the common Nucleo-F030R8 development board, which features a STM32F030R8 mcu.** 
+
+**All changes are sourced from relevant data briefs and manuals, compiled directly below and listed elsewhere throughout. From here on out, I'll be noting changes to the original tutorial in  *italics* to try and make clear any and all changes to the source material. Any and all new/modified images are held in the directory ``images/STM32F030_images``**
+
+[STM32F030R8(MCU) Datasheet](https://www.st.com/resource/en/datasheet/stm32f030r8.pdf)
+
+[STM32F030x0 Reference Manual](https://www.st.com/resource/en/reference_manual/rm0360-stm32f030x4x6x8xc-and-stm32f070x6xb-advanced-armbased-32bit-mcus-stmicroelectronics.pdf)
+
+[Nucleo-F030R8 Datasheet](https://www.st.com/resource/en/data_brief/nucleo-f030r8.pdf)
+
+**Thanks for a great guide to bare metal programming, hope these notes can help others who are just starting out like me! -Sam**
+___
 
 This guide is written for developers who wish to start programming
 microcontrollers using a GCC compiler and a datasheet, without using any
@@ -33,9 +46,14 @@ template projects for different architectures:
 | RP2040 Pico-W5500   | Cortex-M0+ | [mcu datasheet](https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf) | [board datasheet](https://docs.wiznet.io/Product/iEthernet/W5500/w5500-evb-pico) | [webui](steps/step-7-webserver/pico-w5500/) |
 | ESP32-C3            | RISCV      | [mcu datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf) | | [blinky](templates/blinky/esp32-c3) |
 
-In this tutorial we'll use the **Nucleo-F429ZI** development board, so
+In this tutorial we'll use the ***Nucleo-F030R8*** development board, so
 go ahead and download the mcu datasheet and the board datasheet for it.
 
+***Relevant Links:***
+
+*[STM32F030R8(MCU) Datasheet](https://www.st.com/resource/en/datasheet/stm32f030r8.pdf)*
+
+*[Nucleo-F030R8 Datasheet](https://www.st.com/resource/en/data_brief/nucleo-f030r8.pdf)*
 ## Tools setup
 
 To proceed, the following tools are required:
@@ -105,16 +123,16 @@ Firmware code instructions are read and executed by reading from that memory reg
 RAM, which is also mapped to a specific address. We can read and write any
 values to the RAM region.
 
-From STM32F429 datasheet, we can take a look at section 2.3.1 and learn
-that RAM region starts at address 0x20000000 and has size of 192KB. From section
-2.4 we can learn that flash is mapped at address 0x08000000. Our MCU has
-2MB flash, so flash and RAM regions are located like this:
-
+***From STM32F030R8 datasheet, we can take a look at section 5 Figure 10 and learn
+that RAM region starts at address 0x20000000 and has size of 8kb. From section
+5 we can learn that flash is mapped at address 0x1FFFEC00. Our MCU has
+64kb flash, so flash and RAM regions are located like this:***
 <img src="images/mem.svg" />
+***NOTE: This image needs to be edited for this chipset***
 
-From the datasheet we can also learn that there are many more memory regions.
-Their address ranges are given in the section 2.3 "Memory Map". For example,
-there is a "GPIOA" region that starts at 0x40020000 and has length of 1KB.
+***From the datasheet we can also learn that there are many more memory regions.
+Their address ranges are given in the section 5 table 17. For example,
+there is a "GPIOA" region that starts at 0x48000000 and has length of 1KB.***
 
 These memory regions correspond to a different "peripherals" inside the MCU -
 a piece of silicon circuitry that make certain pins behave in a special way.
@@ -138,14 +156,14 @@ could be UART1, UART2, ... which allow to implement multiple UART channels.
 On Nucleo-F429, there are several GPIO and UART peripherals.
 
 For example, GPIOA
-peripheral starts at 0x40020000, and we can find GPIO register description in
-section 8.4. The datasheet says that `GPIOA_MODER` register has offset 0, that
-means that it's address is `0x40020000 + 0`, and this is the format of the
+peripheral starts at ***0x48000000***, and we can find GPIO register description in
+section 8.4. The ***reference manual*** says that `GPIOA_MODER` register has offset 0, that
+means that it's address is ***0x48000000*** + 0, and this is the format of the
 register:
 
-<img src="images/moder.png" style="max-width: 100%" />
+<img src="images/STM32F030_images/moder.png" style="max-width: 100%" />
 
-The datasheet shows that the 32-bit MODER register is a collection of 2-bit
+The ***reference manual*** shows that the 32-bit MODER register is a collection of 2-bit
 values, 16 in total. Therefore, one MODER register controls 16 physical pins,
 Bits 0-1 control pin 0, bits 2-3 control pin 1, and so on. The 2-bit value
 encodes pin mode: 0 means input, 1 means output, 2 means "alternate function" -
