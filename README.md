@@ -175,7 +175,7 @@ If we write 32-bit value `0` to the register MODER, we'll set all 16 pins,
 from A0 to A15, to input mode:
 
 ```c
-  * (volatile uint32_t *) (0x40020000 + 0) = 0;  // Set A0-A15 to input mode
+  * (volatile uint32_t *) (0x48000000 + 0) = 0;  // Set A0-A15 to input mode
 ```
 
 Note the `volatile` specifier. Its meaning will be covered later.  By setting
@@ -183,8 +183,8 @@ individual bits, we can selectively set specific pins to a desired mode. For
 example, this snippet sets pin A3 to output mode:
 
 ```c
-  * (volatile uint32_t *) (0x40020000 + 0) &= ~(3 << 6);  // CLear bit range 6-7
-  * (volatile uint32_t *) (0x40020000 + 0) |= 1 << 6;     // Set bit range 6-7 to 1
+  * (volatile uint32_t *) (0x48000000 + 0) &= ~(3 << 6);  // CLear bit range 6-7
+  * (volatile uint32_t *) (0x48000000 + 0) |= 1 << 6;     // Set bit range 6-7 to 1
 ```
 
 Let me explain those bit operations. Our goal is to set bits 6-7, which are
@@ -228,8 +228,8 @@ register by direct accessing certain memory addresses. Let's look at the
 snippet that sets pin A3 to output mode:
 
 ```c
-  * (volatile uint32_t *) (0x40020000 + 0) &= ~(3 << 6);  // CLear bit range 6-7
-  * (volatile uint32_t *) (0x40020000 + 0) |= 1 << 6;     // Set bit range 6-7 to 1
+  * (volatile uint32_t *) (0x48000000 + 0) |= 1 << 6;     // Set bit range 6-7 to 1
+  * (volatile uint32_t *) (0x48000000 + 0) &= ~(3 << 6);  // CLear bit range 6-7
 ```
 
 That is pretty cryptic. Without extensive comments, such code would be quite
@@ -245,7 +245,7 @@ struct gpio {
   volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFR[2];
 };
 
-#define GPIOA ((struct gpio *) 0x40020000)
+#define GPIOA ((struct gpio *) 0x48000000)
 ```
 
 Then, for setting GPIO pin mode, we can define a function:
@@ -265,12 +265,12 @@ Now, we can rewrite the snippet for A3 like this:
 gpio_set_mode(GPIOA, 3 /* pin */, GPIO_MODE_OUTPUT);  // Set A3 to output
 ```
 
-Our MCU has several GPIO peripherals (also called "banks"): A, B, C, ... K.
+Our MCU has several GPIO peripherals (also called "banks"): A, B, C, ***D and F. E is "reserved"***
 From section 2.3 we can see that they are 1KB away from each other:
-GPIOA is at address 0x40020000, GPIOB is at 0x40020400, and so on:
+GPIOA is at address ***0x48000000***, GPIOB is at ***0x48000400***, and so on:
 
 ```c
-#define GPIO(bank) ((struct gpio *) (0x40020000 + 0x400 * (bank)))
+#define GPIO(bank) ((struct gpio *) (0x48000000 + 0x400 * (bank)))
 ```
 
 We can create pin numbering that includes the bank and the pin number.
@@ -287,7 +287,7 @@ This way, we can specify pins for any GPIO bank:
 
 ```c
   uint16_t pin1 = PIN('A', 3);    // A3   - GPIOA pin 3
-  uint16_t pin2 = PIN('G', 11);   // G11  - GPIOG pin 11
+  uint16_t pin2 = PIN('D', 11);   // GD11  - GPIOD pin 11
 ``` 
 
 Let's look first at what happens for `PIN('A', 3)`:
@@ -296,11 +296,11 @@ Let's look first at what happens for `PIN('A', 3)`:
 - Next we bit shift this value left by 8 bits because we want to store `bank` in the upper byte of this 16 bit, or 2 byte value. In this case the result remains the same: `0b00000000,00000000`.
 - Finally we bitwise OR the value above with `num`, in our case `3` which has a 16 bit binary representation of `0b00000000,00000011`. The result in binary is `0b00000000,00000011`.
 
-Let's take a look at what happens for `PIN('G',11)`:
+Let's take a look at what happens for `PIN('D',11)`:
 
-- `(bank) - 'G'` results in `'G' - 'A'` which will evaluate to `6`. As a 16 bit binary value this would be `0b00000000,00000110`.
-- Next we bit shift this value left by 8 bits because we want to store `bank` in the upper byte of this 16 bit, or 2 byte value. This results in a binary value of: `0b00000110,00000000`.
-- Finally we bitwise OR the value above with `num`, in our case `11` which has a 16 bit binary representation of `0b00000000,00001011`. The result of the bitwise OR in binary is `0b00000110,00001011` which is a combination of `bank` in the upper byte and `pin` in the lower byte.
+- `(bank) - 'D'` results in `'D' - 'A'` which will evaluate to `3`. As a 16 bit binary value this would be `0b00000000,00000011`.
+- Next we bit shift this value left by 8 bits because we want to store `bank` in the upper byte of this 16 bit, or 2 byte value. This results in a binary value of: `0b00000011,00000000`.
+- Finally we bitwise OR the value above with `num`, in our case `11` which has a 16 bit binary representation of `0b00000000,00001011`. The result of the bitwise OR in binary is `0b00000011,00001011` which is a combination of `bank` in the upper byte and `pin` in the lower byte.
 
 Let's rewrite the `gpio_set_mode()` function to take our pin specification:
 
