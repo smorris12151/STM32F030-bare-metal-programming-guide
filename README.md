@@ -7,7 +7,7 @@ English | [中文](README_zh-CN.md) | [Türkçe](README_tr-TR.md)
 ___
 **NOTE: This is a fork of the original repo found [here](https://github.com/cpq/bare-metal-programming-guide); Since I didn't have one of the boards listed in the original tutorial, I rewrote this for my own use with the common Nucleo-F030R8 development board, which features a STM32F030R8 mcu.** 
 
-**All changes are sourced from relevant data briefs and manuals, compiled directly below and listed elsewhere throughout. From here on out, I'll be noting changes to the original tutorial in  *italics* to try and make clear any and all changes to the source material. Any and all new/modified images are held in the directory ``images/STM32F030_images``**
+**All changes are sourced from relevant data briefs and manuals, compiled directly below and listed elsewhere throughout. From here on out, I'll be noting changes to the original tutorial in  *italics* to try and make clear any and all changes to the source material. Any and all new/modified images are held in the directory ``images/STM32F030_images`` Similarly, all re-written code files are located in directory ``STM32F030_steps``**
 
 [STM32F030R8(MCU) Datasheet](https://www.st.com/resource/en/datasheet/stm32f030r8.pdf)
 
