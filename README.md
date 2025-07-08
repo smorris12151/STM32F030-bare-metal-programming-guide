@@ -335,9 +335,11 @@ handlers are specific to the given MCU - these are interrupt handlers for
 peripherals. Simpler MCUs with few peripherals have few interrupt handlers,
 and more complex MCUs have many.
 
-Vector table for STM32F429 is documented in Table 62. From there we can learn
-that there are 91 peripheral handlers, in addition to the standard 16.
-
+Vector table for ***STM32F030*** is documented in Table ***31 of the reference manual***. From there we can learn
+that there are ***32*** peripheral handlers, in addition to the standard 16. 
+___
+***NOTE: Confusion point here - we would expect to see 48 entries in this table, but only see 39. This is because some chunks of memory are "reserved", and are excluded from the table. By considering the start address of 0x00000000 and the end adress of 0x000000C0, we can see a difference of 192 bytes, or 48 4byte regions. Ergo, 48 32 bit entries, ergo 48 entries in our vector table. I think -Sam***
+___
 Every entry in the vector table is an address of a function that MCU executes
 when a hardware interrupt (IRQ) triggers. The exception are first two entries,
 which play a key role in the MCU boot process.  Those two first values are: an
@@ -354,7 +356,7 @@ jump to our boot function.
 
 Let's create a file `main.c`, and specify our boot function that initially does
 nothing (falls into infinite loop), and specify a vector table that contains 16
-standard entries and 91 STM32 entries. In your editor of choice, create
+standard entries and ***32*** STM32 entries. In your editor of choice, create
 `main.c` file and copy/paste the following into `main.c` file:
 
 ```c
@@ -365,8 +367,8 @@ __attribute__((naked, noreturn)) void _reset(void) {
 
 extern void _estack(void);  // Defined in link.ld
 
-// 16 standard and 91 STM32-specific handlers
-__attribute__((section(".vectors"))) void (*const tab[16 + 91])(void) = {
+// 16 standard and 32 STM32-specific handlers
+__attribute__((section(".vectors"))) void (*const tab[16 + 32])(void) = {
   _estack, _reset
 };
 ```
@@ -375,8 +377,8 @@ Here the reset() function is the Reset_Handler. For function `_reset()`, we have
 `noreturn` - they mean, standard function's prologue and epilogue should not
 be created by the compiler, and that function does not return.
 
-The `void (*const tab[16 + 91])(void)` expression means: define an array of 16
-\+ 91 pointers to functions which return nothing (void) and take no arguments (void).
+The `void (*const tab[16 + 32])(void)` expression means: define an array of 16
+\+ 32 pointers to functions which return nothing (void) and take no arguments (void).
 Each such function is an IRQ handler (Interrupt ReQuest handler). An array of
 those handlers is called a vector table.
 
@@ -394,9 +396,11 @@ Oftentimes, device SDKs have a startup.s file written in assembly.
 Let's compile our code. Start a terminal (or a command prompt on Windows) and execute:
 
 ```sh
-$ arm-none-eabi-gcc -mcpu=cortex-m4 main.c -c
+$ arm-none-eabi-gcc -mcpu=cortex-m0 main.c -c
 ```
-
+___
+***NOTE: change of -mcpu=cortex-m0 to reflect simplified architectur of F030R8 chip***
+___
 That works! The compilation produced a file `main.o` which contains
 our minimal firmware that does nothing.  The `main.o` file is in ELF binary
 format, which contains several sections. Let's see them:
@@ -404,15 +408,22 @@ format, which contains several sections. Let's see them:
 ```sh
 $ arm-none-eabi-objdump -h main.o
 ...
+main.o:     file format elf32-littlearm
+
+Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         00000002  00000000  00000000  00000034  2**1
+  0 .text         0000000e  00000000  00000000  00000034  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000000  00000000  00000000  00000036  2**0
+  1 .data         00000000  00000000  00000000  00000042  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .bss          00000000  00000000  00000000  00000036  2**0
+  2 .bss          00000000  00000000  00000000  00000042  2**0
                   ALLOC
-  3 .vectors      000001ac  00000000  00000000  00000038  2**2
-                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+  3 .vectors      000000c0  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+  4 .comment      00000046  00000000  00000000  00000104  2**0
+                  CONTENTS, READONLY
+  5 .ARM.attributes 0000002c  00000000  00000000  0000014a  2**0
+                  CONTENTS, READONLY
 ...
 ```
 
