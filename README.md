@@ -125,7 +125,7 @@ values to the RAM region.
 
 ***From STM32F030R8 datasheet, we can take a look at section 5 Figure 10 and learn
 that RAM region starts at address 0x20000000 and has size of 8kb. From section
-5 we can learn that flash is mapped at address 0x1FFFEC00. Our MCU has
+5 we can learn that flash is mapped at address 0x08000000. Our MCU has
 64kb flash, so flash and RAM regions are located like this:***
 <img src="images/mem.svg" />
 ***NOTE: This image needs to be edited for this chipset***
@@ -464,8 +464,9 @@ vector table, so it relies on the ELF header.
 
 ```
 MEMORY {
-  flash(rx)  : ORIGIN = 0x08000000, LENGTH = 2048k
-  sram(rwx) : ORIGIN = 0x20000000, LENGTH = 192k  /* remaining 64k in a separate address space */
+  /*NOTE: these lengths and origins have been updated to suit STM32F030*/
+  flash(rx)  : ORIGIN = 0x08000000, LENGTH = 64k
+  sram(rwx) : ORIGIN = 0x20000000, LENGTH = 8k  
 }
 ```
 This tells the linker that we have two memory regions in the address space,
@@ -563,17 +564,24 @@ Let's examine sections in firmware.elf:
 ```sh
 $ arm-none-eabi-objdump -h firmware.elf
 ...
+firmware.elf:     file format elf32-littlearm
+
+Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .vectors      000001ac  08000000  08000000  00010000  2**2
-                  CONTENTS, ALLOC, LOAD, DATA
-  1 .text         00000058  080001ac  080001ac  000101ac  2**2
+  0 .vectors      000000c0  08000000  08000000  00001000  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  1 .text         0000000e  080000c0  080000c0  000010c0  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .comment      00000045  00000000  00000000  000010ce  2**0
+                  CONTENTS, READONLY
+  3 .ARM.attributes 0000002c  00000000  00000000  00001113  2**0
+                  CONTENTS, READONLY
 ...
 ```
 
 Now we can see that the .vectors section will reside at the very beginning of
-flash memory at address 0x8000000, then the .text section right after it, at
-0x80001ac. Our code does not create any variables, so there is no data section.
+flash memory at address 0x08000000, then the .text section right after it, at
+0x080000c0. Our code does not create any variables, so there is no data section.
 
 ## Flash firmware
 
@@ -588,7 +596,7 @@ And use `st-link` utility to flash the firmware.bin. Plug your board to the
 USB, and execute:
 
 ```sh
-$ st-flash --reset write firmware.bin 0x8000000
+$ st-flash --reset write firmware.bin 0x08000000
 ```
 
 Done! We've flashed a firmware that does nothing.
@@ -650,7 +658,7 @@ action / target:
 CFLAGS  ?=  -W -Wall -Wextra -Werror -Wundef -Wshadow -Wdouble-promotion \
             -Wformat-truncation -fno-common -Wconversion \
             -g3 -Os -ffunction-sections -fdata-sections -I. \
-            -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 $(EXTRA_CFLAGS)
+            -mcpu=cortex-m0 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 $(EXTRA_CFLAGS)
 LDFLAGS ?= -Tlink.ld -nostartfiles -nostdlib --specs nano.specs -lc -lgcc -Wl,--gc-sections -Wl,-Map=$@.map
 SOURCES = main.c 
 
@@ -659,6 +667,9 @@ build: firmware.elf
 firmware.elf: $(SOURCES)
 	arm-none-eabi-gcc $(SOURCES) $(CFLAGS) $(LDFLAGS) -o $@
 ```
+___
+***NOTE: Changed values of mcpu flag to cortex-m0 to suit this chip, as well as changing -mfloat-abi=hard to -mfloat-abi=soft, since this chip has no floating point unit :O ***
+___
 
 There, we define compilation flags. The `?=` means that's a default value;
 we could override them from the command line like this:
