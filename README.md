@@ -287,7 +287,7 @@ This way, we can specify pins for any GPIO bank:
 
 ```c
   uint16_t pin1 = PIN('A', 3);    // A3   - GPIOA pin 3
-  uint16_t pin2 = PIN('D', 11);   // GD11  - GPIOD pin 11
+  uint16_t pin2 = PIN('D', 11);   // D11  - GPIOD pin 11
 ``` 
 
 Let's look first at what happens for `PIN('A', 3)`:
