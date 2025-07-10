@@ -982,18 +982,25 @@ bool timer_expired(uint32_t *t, uint32_t prd, uint32_t now) {
 ```
 
 Now we are ready to update our main loop and use a precise timer for LED blink.
-For example, let's use 500 milliseconds blinking interval:
+For example, let's use ***1000 milliseconds (1 second)*** blinking interval:
 
 ```c
-  uint32_t timer = 0, period = 50000;      // Declare timer and 50000ms period
+int main(void) {
+  uint16_t L2 = PIN('A', 5);            // User LED L2
+  RCC->AHBENR |= BIT(PINBANK(L2) + 17); // Enable GPIO clock for GPIOA, which is bit 17 of AHBENR for STM32F030, hence the +17 offset
+  systick_init(8000000 / 1000);         // Tick every 1 ms
+  gpio_set_mode(L2, GPIO_MODE_OUTPUT);  // Set L2 to output mode
+  uint32_t timer = 0, period = 1000;      // Declare timer and 1000ms period
   for (;;) {
     if (timer_expired(&timer, period, s_ticks)) {
       static bool on;       // This block is executed
-      gpio_write(led, on);  // Every `period` milliseconds
+      gpio_write(L2, on);  // Every `period` milliseconds
       on = !on;             // Toggle LED state
     }
     // Here we could perform other activities!
   }
+  return 0;
+}
 ```
 
 Note that using SysTick, and a helper `timer_expired()` function, we made our
