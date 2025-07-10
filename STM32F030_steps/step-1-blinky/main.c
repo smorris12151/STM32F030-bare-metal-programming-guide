@@ -19,7 +19,7 @@ struct rcc {
 struct gpio {
   volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFRL, AFRH, BRR;
 };
-#define GPIO(bank) ((struct gpio *) (0x48000000 + 0x400 * (bank)))
+#define GPIO(bank) ((struct gpio *) (0x48000000 + 0x400 * (bank))) //Changed gpio mem address to match stm32f030
 
 // Enum values are per datasheet: 0, 1, 2, 3
 enum { GPIO_MODE_INPUT, GPIO_MODE_OUTPUT, GPIO_MODE_AF, GPIO_MODE_ANALOG };
