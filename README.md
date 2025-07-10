@@ -13,7 +13,7 @@ ___
 
 [STM32F030x0 Reference Manual](https://www.st.com/resource/en/reference_manual/rm0360-stm32f030x4x6x8xc-and-stm32f070x6xb-advanced-armbased-32bit-mcus-stmicroelectronics.pdf)
 
-[Nucleo-F030R8 Datasheet](https://www.st.com/resource/en/data_brief/nucleo-f030r8.pdf)
+[Nucleo-F030R8 Datasheet](https://www.st.com/resource/en/user_manual/um1724-stm32-nucleo64-boards-mb1136-stmicroelectronics.pdf)
 
 **Thanks for a great guide to bare metal programming, hope these notes can help others who are just starting out like me! -Sam**
 ___
@@ -242,7 +242,7 @@ represent them as a structure with 32-bit fields, and make a define for GPIOA:
 
 ```c
 struct gpio {
-  volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFR[2];
+  volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFRL, AFRH, BRR;
 };
 
 #define GPIOA ((struct gpio *) 0x48000000)
@@ -668,7 +668,8 @@ firmware.elf: $(SOURCES)
 	arm-none-eabi-gcc $(SOURCES) $(CFLAGS) $(LDFLAGS) -o $@
 ```
 ___
-***NOTE: Changed values of mcpu flag to cortex-m0 to suit this chip, as well as changing -mfloat-abi=hard to -mfloat-abi=soft, since this chip has no floating point unit :O ***
+
+***NOTE: Changed values of mcpu flag to cortex-m0 to suit this chip, as well as changing -mfloat-abi=hard to -mfloat-abi=soft, since this chip has no floating point unit :O***
 ___
 
 There, we define compilation flags. The `?=` means that's a default value;
@@ -687,8 +688,9 @@ expands to a target name - in our case, `firmware.elf`.
 Let's call `make`:
 
 ```
-$ make build
-arm-none-eabi-gcc main.c  -W -Wall -Wextra -Werror -Wundef -Wshadow -Wdouble-promotion -Wformat-truncation -fno-common -Wconversion -g3 -Os -ffunction-sections -fdata-sections -I. -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16  -Tlink.ld -nostartfiles -nostdlib --specs nano.specs -lc -lgcc -Wl,--gc-sections -Wl,-Map=firmware.elf.map -o firmware.elf
+$ ❯ make build
+arm-none-eabi-gcc main.c  -W -Wall -Wextra -Werror -Wundef -Wshadow -Wdouble-promotion -Wformat-truncation -fno-common -Wconversion -g3 -Os -ffunction-sections -fdata-sections -I. -mcpu=cortex-m0 -mthumb -mfloat-abi=soft -mfpu=fpv4-sp-d16  -Tlink.ld -nostartfiles -nostdlib --specs nano.specs -lc -lgcc -Wl,--gc-sections -Wl,-Map=firmware.elf.map -o firmware.elf
+arm-none-eabi-objcopy -O binary firmware.elf firmware.bin
 ```
 
 If we run it again:
@@ -742,15 +744,13 @@ A complete project source code you can find in [steps/step-0-minimal](steps/step
 
 Now as we have the whole build / flash infrastructure set up, it is time to
 teach our firmware to do something useful. Something useful is of course blinking
-an LED. A Nucleo-F429ZI board has three built-in LEDs. In a Nucleo board
-datasheet section 6.5 we can see which pins built-in LEDs are attached to:
+an LED. A ***Nucleo-F030R8*** board has three built-in LEDs, ***but only one of them is directly programmable, the green LED L2.*** In a Nucleo board
+datasheet section ***7.4*** we can see which pins built-in LEDs are attached to:
 
-- PB0: green LED
-- PB7: blue LED
-- PB14: red LED
+- ***A5 - green LED L2***
 
 Let's modify `main.c` file and add our definitions for PIN, `gpio_set_mode()`.
-In the main() function, we set the blue LED to output mode, and start an
+In the main() function, we set ***the green LED*** to output mode, and start an
 infinite loop. First, let's copy the definitions for pins and GPIO we have
 discussed earlier. Note we also add a convenience macro `BIT(position)`:
 
@@ -764,9 +764,10 @@ discussed earlier. Note we also add a convenience macro `BIT(position)`:
 #define PINBANK(pin) (pin >> 8)
 
 struct gpio {
-  volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFR[2];
+  volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFRL, AFRH, BRR;
 };
-#define GPIO(bank) ((struct gpio *) (0x40020000 + 0x400 * (bank)))
+#define GPIO(bank) ((struct gpio *) (0x48000000 + 0x400 * (bank))) //Changed gpio mem address to match stm32f030
+
 
 // Enum values are per datasheet: 0, 1, 2, 3
 enum { GPIO_MODE_INPUT, GPIO_MODE_OUTPUT, GPIO_MODE_AF, GPIO_MODE_ANALOG };
@@ -775,37 +776,38 @@ static inline void gpio_set_mode(uint16_t pin, uint8_t mode) {
   struct gpio *gpio = GPIO(PINBANK(pin));  // GPIO bank
   int n = PINNO(pin);                      // Pin number
   gpio->MODER &= ~(3U << (n * 2));         // Clear existing setting
-  gpio->MODER |= (mode & 3) << (n * 2);    // Set new mode
+  gpio->MODER |= (mode & 3U) << (n * 2);   // Set new mode
 }
+
 ```
 
 Some microcontrollers, when they are powered, have all their peripherals
 powered and enabled, automatically. STM32 MCUs, however, by default have their
 peripherals disabled in order to save power. In order to enable a GPIO peripheral,
 it should be enabled (clocked) via the RCC (Reset and Clock Control) unit.
-In the datasheet section 7.3.10 we find that the AHB1ENR (AHB1 peripheral
-clock enable register) is responsible to turn GPIO banks on or off. First we
+In the ***Reference Manual section 7.4.6*** we find that the ***AHBENR (AHB peripheral
+clock enable register)*** is responsible to turn GPIO banks on or off. First we
 add a definition for the whole RCC unit:
 
 ```c
 struct rcc {
-  volatile uint32_t CR, PLLCFGR, CFGR, CIR, AHB1RSTR, AHB2RSTR, AHB3RSTR,
-      RESERVED0, APB1RSTR, APB2RSTR, RESERVED1[2], AHB1ENR, AHB2ENR, AHB3ENR,
-      RESERVED2, APB1ENR, APB2ENR, RESERVED3[2], AHB1LPENR, AHB2LPENR,
-      AHB3LPENR, RESERVED4, APB1LPENR, APB2LPENR, RESERVED5[2], BDCR, CSR,
-      RESERVED6[2], SSCGR, PLLI2SCFGR;
+  volatile uint32_t CR, CFGR, CIR, APB2RSTR, APB1RSTR,
+  AHBENR, APB2ENR, APB1ENR, BCDR, CSR, AHBRSTR, CFGR2,
+  CFGR3, CR2;
 };
-#define RCC ((struct rcc *) 0x40023800)
+#define RCC ((struct rcc *) 0x40021000)
 ```
+___
+***NOTE: the rcc structure and starting memory address are different for stm32f030, hence change to above struct***
+___
 
-In the AHB1ENR register documentation we see that bits from 0 to 10 inclusive
-set the clock for GPIO banks GPIOA - GPIOK:
+In the ***AHBENR*** register documentation we see that bits ***17, 18, 19, 20, and 22 correspond to GPIOA, GPIOB, GPIOC, GPIOD, and GPIOF respectively. Hence, we can modify our BIT helper function to include this offset of 17 with simple addition.***
 
 ```c
 int main(void) {
-  uint16_t led = PIN('B', 7);            // Blue LED
-  RCC->AHB1ENR |= BIT(PINBANK(led));     // Enable GPIO clock for LED
-  gpio_set_mode(led, GPIO_MODE_OUTPUT);  // Set blue LED to output mode
+  uint16_t L2 = PIN('A', 5);            // User LED L2
+  RCC->AHBENR |= BIT(PINBANK(L2) + 17); // Enable GPIO clock for GPIOA, which is bit 17 of AHBENR for STM32F030, hence the +17 offset
+  gpio_set_mode(L2, GPIO_MODE_OUTPUT);  // Set L2 to output mode
   for (;;) (void) 0;                     // Infinite loop
   return 0;
 }
@@ -831,23 +833,29 @@ a NOP instruction a given number of times:
 
 ```c
 static inline void spin(volatile uint32_t count) {
-  while (count--) (void) 0;
+  while (count--) asm("nop");
 }
 ```
 
 Finally, we're ready to modify our main loop to implement LED blinking:
 
 ```c
+int main(void) {
+  uint16_t L2 = PIN('A', 5);            // User LED L2
+  RCC->AHBENR |= BIT(PINBANK(L2) + 17); // Enable GPIO clock for GPIOA, which is bit 17 of AHBENR for STM32F030, hence the +17 offset
+  gpio_set_mode(L2, GPIO_MODE_OUTPUT);  // Set L2 to output mode
   for (;;) {
-    gpio_write(led, true);
+    gpio_write(L2, true);
     spin(999999);
-    gpio_write(led, false);
+    gpio_write(L2, false);
     spin(999999);
   }
+  return 0;
+}
 ```
 
-Run `make flash` and enjoy blue LED flashing.
-A complete project source code you can find in [steps/step-1-blinky](steps/step-1-blinky).
+Run `make flash` and enjoy ***green*** LED flashing.
+A complete project source code you can find in [STM32f030_steps/step-1-blinky](STM32F030_steps/step-1-blinky).
 
 ## Blinky with SysTick interrupt
 
