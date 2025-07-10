@@ -42,7 +42,7 @@ static inline void spin(volatile uint32_t count) {
 
 int main(void) {
   uint16_t L2 = PIN('A', 5);            // User LED L2
-  RCC->AHBENR |= BIT(17); // Enable GPIO clock for GPIOA, which is bit 17 of AHBENR for STM32F030
+  RCC->AHBENR |= BIT(PINBANK(L2) + 17); // Enable GPIO clock for GPIOA, which is bit 17 of AHBENR for STM32F030, hence the +17 offset
   gpio_set_mode(L2, GPIO_MODE_OUTPUT);  // Set L2 to output mode
   for (;;) {
     gpio_write(L2, true);
