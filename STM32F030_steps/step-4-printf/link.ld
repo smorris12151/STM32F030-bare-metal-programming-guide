@@ -1,7 +1,8 @@
 ENTRY(_reset);
 MEMORY {
-  flash(rx)  : ORIGIN = 0x08000000, LENGTH = 2048k
-  sram(rwx) : ORIGIN = 0x20000000, LENGTH = 192k  /* remaining 64k in a separate address space */
+  /*NOTE: these lengths and origins have been updated to suit STM32F030*/
+  flash(rx)  : ORIGIN = 0x08000000, LENGTH = 64k
+  sram(rwx) : ORIGIN = 0x20000000, LENGTH = 8k  
 }
 _estack     = ORIGIN(sram) + LENGTH(sram);    /* stack points to end of SRAM */
 
