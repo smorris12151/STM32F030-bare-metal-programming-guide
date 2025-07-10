@@ -10,16 +10,14 @@
 #define PINBANK(pin) (pin >> 8)
 
 struct rcc {
-  volatile uint32_t CR, PLLCFGR, CFGR, CIR, AHB1RSTR, AHB2RSTR, AHB3RSTR,
-      RESERVED0, APB1RSTR, APB2RSTR, RESERVED1[2], AHB1ENR, AHB2ENR, AHB3ENR,
-      RESERVED2, APB1ENR, APB2ENR, RESERVED3[2], AHB1LPENR, AHB2LPENR,
-      AHB3LPENR, RESERVED4, APB1LPENR, APB2LPENR, RESERVED5[2], BDCR, CSR,
-      RESERVED6[2], SSCGR, PLLI2SCFGR;
+  volatile uint32_t CR, CFGR, CIR, APB2RSTR, APB1RSTR,
+  AHBENR, APB2ENR, APB1ENR, BCDR, CSR, AHBRSTR, CFGR2,
+  CFGR3, CR2;
 };
-#define RCC ((struct rcc *) 0x40023800)
+#define RCC ((struct rcc *) 0x40021000)
 
 struct gpio {
-  volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFR[2];
+  volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFRL, AFRH, BRR;
 };
 #define GPIO(bank) ((struct gpio *) (0x40020000 + 0x400 * (bank)))
 
@@ -43,8 +41,8 @@ static inline void spin(volatile uint32_t count) {
 }
 
 int main(void) {
-  uint16_t led = PIN('B', 7);            // Blue LED
-  RCC->AHB1ENR |= BIT(PINBANK(led));     // Enable GPIO clock for LED
+  uint16_t led = PIN('A', 5);            // Blue LED
+  RCC->AHBENR |= BIT(PINBANK(led));     // Enable GPIO clock for LED
   gpio_set_mode(led, GPIO_MODE_OUTPUT);  // Set blue LED to output mode
   for (;;) {
     gpio_write(led, true);
@@ -68,6 +66,6 @@ __attribute__((naked, noreturn)) void _reset(void) {          //naked=don't gene
 
 extern void _estack(void);  // Defined in link.ld
 
-// 16 standard and 91 STM32-specific handlers
-__attribute__((section(".vectors"))) void (*const tab[16 + 91])(void) = { // defines the interrupt vector table and dumps it into .vectors via the linker script
+// 16 standard and 32 STM32-specific handlers
+__attribute__((section(".vectors"))) void (*const tab[16 + 32])(void) = { // defines the interrupt vector table and dumps it into .vectors via the linker script
     _estack, _reset};
