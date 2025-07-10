@@ -15,26 +15,24 @@ struct systick {
 #define SYSTICK ((struct systick *) 0xe000e010)  // 2.2.2
 
 struct rcc {
-  volatile uint32_t CR, PLLCFGR, CFGR, CIR, AHB1RSTR, AHB2RSTR, AHB3RSTR,
-      RESERVED0, APB1RSTR, APB2RSTR, RESERVED1[2], AHB1ENR, AHB2ENR, AHB3ENR,
-      RESERVED2, APB1ENR, APB2ENR, RESERVED3[2], AHB1LPENR, AHB2LPENR,
-      AHB3LPENR, RESERVED4, APB1LPENR, APB2LPENR, RESERVED5[2], BDCR, CSR,
-      RESERVED6[2], SSCGR, PLLI2SCFGR;
+  volatile uint32_t CR, CFGR, CIR, APB2RSTR, APB1RSTR,
+  AHBENR, APB2ENR, APB1ENR, BCDR, CSR, AHBRSTR, CFGR2,
+  CFGR3, CR2;
 };
-#define RCC ((struct rcc *) 0x40023800)
+#define RCC ((struct rcc *) 0x40021000)
 
 static inline void systick_init(uint32_t ticks) {
   if ((ticks - 1) > 0xffffff) return;  // Systick timer is 24 bit
   SYSTICK->LOAD = ticks - 1;
   SYSTICK->VAL = 0;
   SYSTICK->CTRL = BIT(0) | BIT(1) | BIT(2);  // Enable systick
-  RCC->APB2ENR |= BIT(14);                   // Enable SYSCFG
+  RCC->APB2ENR |= BIT(0);                   // Enable SYSCFG - note this is bit 0 for stm32f030
 }
 
 struct gpio {
-  volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFR[2];
+  volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFRL, AFRH, BRR;
 };
-#define GPIO(bank) ((struct gpio *) (0x40020000 + 0x400 * (bank)))
+#define GPIO(bank) ((struct gpio *) (0x48000000 + 0x400 * (bank))) //Changed gpio mem address to match stm32f030
 
 // Enum values are per datasheet: 0, 1, 2, 3
 enum { GPIO_MODE_INPUT, GPIO_MODE_OUTPUT, GPIO_MODE_AF, GPIO_MODE_ANALOG };
@@ -70,15 +68,15 @@ bool timer_expired(uint32_t *t, uint32_t prd, uint32_t now) {
 }
 
 int main(void) {
-  uint16_t led = PIN('B', 7);            // Blue LED
-  RCC->AHB1ENR |= BIT(PINBANK(led));     // Enable GPIO clock for LED
-  systick_init(16000000 / 1000);         // Tick every 1 ms
-  gpio_set_mode(led, GPIO_MODE_OUTPUT);  // Set blue LED to output mode
-  uint32_t timer = 0, period = 500;      // Declare timer and 500ms period
+  uint16_t L2 = PIN('A', 5);            // User LED L2
+  RCC->AHBENR |= BIT(PINBANK(L2) + 17); // Enable GPIO clock for GPIOA, which is bit 17 of AHBENR for STM32F030, hence the +17 offset
+  systick_init(8000000 / 1000);         // Tick every 1 ms
+  gpio_set_mode(L2, GPIO_MODE_OUTPUT);  // Set L2 to output mode
+  uint32_t timer = 0, period = 1000;      // Declare timer and 1000ms period
   for (;;) {
     if (timer_expired(&timer, period, s_ticks)) {
       static bool on;       // This block is executed
-      gpio_write(led, on);  // Every `period` milliseconds
+      gpio_write(L2, on);  // Every `period` milliseconds
       on = !on;             // Toggle LED state
     }
     // Here we could perform other activities!
@@ -87,19 +85,18 @@ int main(void) {
 }
 
 // Startup code
-__attribute__((naked, noreturn)) void _reset(void) {
-  // Initialise memory
-  extern long _sbss, _ebss, _sdata, _edata, _sidata;
+__attribute__((naked, noreturn)) void _reset(void) {          //naked=don't generate prologue/epilogue  //noreturn=it will never exit
+  // memset .bss to zero, and copy .data section to RAM region
+  extern long _sbss, _ebss, _sdata, _edata, _sidata;          //linker symbols declared in the .ld file
   for (long *dst = &_sbss; dst < &_ebss; dst++) *dst = 0;
   for (long *dst = &_sdata, *src = &_sidata; dst < &_edata;) *dst++ = *src++;
 
-  // Call main()
-  main();
-  for (;;) (void) 0;  // Infinite loop
+  main();             // Call main()
+  for (;;) (void) 0;  // Infinite loop in the case if main() returns
 }
 
 extern void _estack(void);  // Defined in link.ld
 
-// 16 standard and 91 STM32-specific handlers
-__attribute__((section(".vectors"))) void (*const tab[16 + 91])(void) = {
+// 16 standard and 32 STM32-specific handlers
+__attribute__((section(".vectors"))) void (*const tab[16 + 32])(void) = { // defines the interrupt vector table and dumps it into .vectors via the linker script
     _estack, _reset, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, SysTick_Handler};

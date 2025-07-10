@@ -871,7 +871,7 @@ see that SysTick has four registers:
 
 Every time VAL drops to zero, a SysTick interrupt is generated.
 The SysTick interrupt index in the vector table is 15, so we need to set it.
-Upon boot, our board Nucleo-F429ZI runs at 16Mhz. We can configure the SysTick
+Upon boot, our board ***Nucleo-F030R8*** runs at ***8Mhz***. We can configure the SysTick
 counter to trigger interrupt each millisecond.
 
 First, let's define a SysTick peripheral. We know 4 registers, and from the
@@ -886,7 +886,7 @@ struct systick {
 
 Next, add an API function that configures it. We need to enable SysTick
 in the `SYSTICK->CTRL` register, and also we must clock it via the
-`RCC->APB2ENR`, described in the section 7.4.14:
+`RCC->APB2ENR`, described in the section ***7.4.7***:
 
 ```c
 #define BIT(x) (1UL << (x))
@@ -895,12 +895,12 @@ static inline void systick_init(uint32_t ticks) {
   SYSTICK->LOAD = ticks - 1;
   SYSTICK->VAL = 0;
   SYSTICK->CTRL = BIT(0) | BIT(1) | BIT(2);  // Enable systick
-  RCC->APB2ENR |= BIT(14);                   // Enable SYSCFG
+  RCC->APB2ENR |= BIT(0);                   // Enable SYSCFG - note this is bit 0 for stm32f030
 }
 ```
 
-By default, Nucleo-F429ZI board runs at 16Mhz. That means, if we call
-`systick_init(16000000 / 1000);`, then SysTick interrupt will be generated
+By default, ***Nucleo-F030R8 board runs at 8MHz.*** That means, if we call
+`systick_init(800000 / 1000);`, then SysTick interrupt will be generated
 every millisecond. We should have interrupt handler function defined - here
 it is, we simply increment a 32-bit millisecond counter:
 
@@ -911,14 +911,16 @@ void SysTick_Handler(void) {
 }
 ```
 
-With 16MHz clock, we init SysTick counter to trigger an interrupt every
-16000 cycles: the `SYSTICK->VAL` initial value is 15999, then it decrements
+With ***8MHz*** clock, we init SysTick counter to trigger an interrupt every
+***8000*** cycles: the `SYSTICK->VAL` initial value is ***7999***, then it decrements
 on each cycle by 1, and when it reaches 0, an interrupt is generated. The
 firmware code execution gets interrupted: a `SysTick_Handler()` function is
 called to increment `s_tick` variable. Here how it looks like on a time scale:
 
 ![](images/systick.svg)
-
+___
+***NOTE: Gotta update this image for 8MHz default for stm32f030***
+___
 
 The `volatile` specifier is required here because `s_ticks` is modified by the
 interrupt handler. `volatile` prevents the compiler to optimise/cache `s_ticks`
@@ -960,7 +962,8 @@ updated by interrupt handlers, or by the hardware, declare as `volatile`**.
 Now we should add `SysTick_Handler()` interrupt handler to the vector table:
 
 ```c
-__attribute__((section(".vectors"))) void (*const tab[16 + 91])(void) = {
+// 16 standard and 32 STM32-specific handlers
+__attribute__((section(".vectors"))) void (*const tab[16 + 32])(void) = { // defines the interrupt vector table and dumps it into .vectors via the linker script
     _estack, _reset, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, SysTick_Handler};
 ```
 
@@ -982,7 +985,7 @@ Now we are ready to update our main loop and use a precise timer for LED blink.
 For example, let's use 500 milliseconds blinking interval:
 
 ```c
-  uint32_t timer, period = 500;          // Declare timer and 500ms period
+  uint32_t timer = 0, period = 50000;      // Declare timer and 50000ms period
   for (;;) {
     if (timer_expired(&timer, period, s_ticks)) {
       static bool on;       // This block is executed
@@ -998,7 +1001,7 @@ main loop (also called superloop) non-blocking. That means that inside that
 loop we can perform many actions - for example, have different timers with
 different periods, and they all will be triggered in time.
 
-A complete project source code you can find in [steps/step-2-systick](steps/step-2-systick) folder.
+A complete project source code you can find in [STM32F030-steps/step-2-systick](STM32F030-steps/step-2-systick) folder.
 
 ## Add UART debug output
 
