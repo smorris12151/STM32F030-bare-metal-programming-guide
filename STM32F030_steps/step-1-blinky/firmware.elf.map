@@ -1,0 +1,143 @@
+
+Discarded input sections
+
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .group         0x00000000        0xc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .text          0x00000000        0x0 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .data          0x00000000        0x0 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .bss           0x00000000        0x0 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+flash            0x08000000         0x00010000         xr
+sram             0x20000000         0x00002000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+LOAD /Applications/ArmGNUToolchain/14.2.rel1/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a
+LOAD /Applications/ArmGNUToolchain/14.2.rel1/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v6-m/nofp/libgcc.a
+                0x20002000                        _estack = (ORIGIN (sram) + LENGTH (sram))
+
+.vectors        0x08000000       0xc0
+ *(.vectors)
+ .vectors       0x08000000       0xc0 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+                0x08000000                tab
+
+.text           0x080000c0       0x90
+ *(.text*)
+ .text.startup.main
+                0x080000c0       0x58 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+                0x080000c0                main
+ .text._reset   0x08000118       0x38 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+                0x08000118                _reset
+
+.glue_7         0x08000150        0x0
+ .glue_7        0x08000150        0x0 linker stubs
+
+.glue_7t        0x08000150        0x0
+ .glue_7t       0x08000150        0x0 linker stubs
+
+.vfp11_veneer   0x08000150        0x0
+ .vfp11_veneer  0x08000150        0x0 linker stubs
+
+.v4_bx          0x08000150        0x0
+ .v4_bx         0x08000150        0x0 linker stubs
+
+.iplt           0x08000150        0x0
+ .iplt          0x08000150        0x0 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.rel.dyn        0x08000150        0x0
+ .rel.iplt      0x08000150        0x0 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.rodata
+ *(.rodata*)
+
+.data           0x20000000        0x0 load address 0x08000150
+                0x20000000                        _sdata = .
+ *(.first_data)
+ *(.data SORT_BY_NAME(.data.*))
+                0x20000000                        _edata = .
+                0x08000150                        _sidata = LOADADDR (.data)
+
+.igot.plt       0x20000000        0x0 load address 0x08000150
+ .igot.plt      0x20000000        0x0 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.bss            0x20000000        0x0 load address 0x08000150
+                0x20000000                        _sbss = .
+ *(.bss SORT_BY_NAME(.bss.*) COMMON)
+                0x20000000                        _ebss = .
+                0x20000000                        . = ALIGN (0x8)
+                0x20000000                        _end = .
+OUTPUT(firmware.elf elf32-littlearm)
+LOAD linker stubs
+
+.debug_info     0x00000000      0x4bf
+ .debug_info    0x00000000      0x4bf /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.debug_abbrev   0x00000000      0x231
+ .debug_abbrev  0x00000000      0x231 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.debug_loclists
+                0x00000000       0xf9
+ .debug_loclists
+                0x00000000       0xf9 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.debug_aranges  0x00000000       0x28
+ .debug_aranges
+                0x00000000       0x28 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.debug_rnglists
+                0x00000000       0x67
+ .debug_rnglists
+                0x00000000       0x67 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.debug_macro    0x00000000     0x15de
+ .debug_macro   0x00000000       0xdc /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x000000dc      0xaa2 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000b7e       0x22 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000ba0       0x5b /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000bfb       0x24 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000c1f       0x94 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000cb3       0x43 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000cf6      0x103 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000df9       0x3a /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000e33       0x57 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000e8a       0x6a /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x00000ef4      0x1df /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x000010d3       0x89 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x0000115c      0x460 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+ .debug_macro   0x000015bc       0x22 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.debug_line     0x00000000      0x41e
+ .debug_line    0x00000000      0x41e /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.debug_str      0x00000000     0x51d8
+ .debug_str     0x00000000     0x51d8 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+                               0x537e (size before relaxing)
+
+.comment        0x00000000       0x45
+ .comment       0x00000000       0x45 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+                                 0x46 (size before relaxing)
+
+.ARM.attributes
+                0x00000000       0x2c
+ .ARM.attributes
+                0x00000000       0x2c /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o
+
+.debug_frame    0x00000000       0x38
+ .debug_frame   0x00000000       0x38 /var/folders/5h/gh6zrcv16_dcmy71qh7xnn5c0000gn/T//ccOb0KoH.o

@@ -19,7 +19,7 @@ struct rcc {
 struct gpio {
   volatile uint32_t MODER, OTYPER, OSPEEDR, PUPDR, IDR, ODR, BSRR, LCKR, AFRL, AFRH, BRR;
 };
-#define GPIO(bank) ((struct gpio *) (0x40020000 + 0x400 * (bank)))
+#define GPIO(bank) ((struct gpio *) (0x48000000 + 0x400 * (bank)))
 
 // Enum values are per datasheet: 0, 1, 2, 3
 enum { GPIO_MODE_INPUT, GPIO_MODE_OUTPUT, GPIO_MODE_AF, GPIO_MODE_ANALOG };
@@ -41,13 +41,13 @@ static inline void spin(volatile uint32_t count) {
 }
 
 int main(void) {
-  uint16_t led = PIN('A', 5);            // Blue LED
-  RCC->AHBENR |= BIT(PINBANK(led));     // Enable GPIO clock for LED
-  gpio_set_mode(led, GPIO_MODE_OUTPUT);  // Set blue LED to output mode
+  uint16_t L2 = PIN('A', 5);            // User LED L2
+  RCC->AHBENR |= BIT(17); // Enable GPIO clock for GPIOA, which is bit 17 of AHBENR for STM32F030
+  gpio_set_mode(L2, GPIO_MODE_OUTPUT);  // Set L2 to output mode
   for (;;) {
-    gpio_write(led, true);
+    gpio_write(L2, true);
     spin(999999);
-    gpio_write(led, false);
+    gpio_write(L2, false);
     spin(999999);
   }
   return 0;
